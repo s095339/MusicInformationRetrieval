@@ -2,7 +2,7 @@ import librosa
 import librosa.display as display
 import numpy as np
 import matplotlib.pyplot as plt
-import soundfile
+import soundfile as sf
 
 def Spectrogram_1_1(sound_flie_name):
     #load audio file-------------------------------------
@@ -22,15 +22,28 @@ def Spectrogram_1_1(sound_flie_name):
     plt.show()
     #----------------------------------------------------
     return
+def WriteChirpToFile_1_c():
+    sr = 8000
+    t = np.arange(0,10,1/sr)
+    x1 = np.sin(2000*t*t)
+    x2 = np.sin(2000*t+10*np.sin(2.5*t*t))
+    sf.write("x1.wav",x1,sr)
+    sf.write("x2.wav",x2,sr)
+    return
 def main():
     #HW1_1=============================================#
-    #(a)
+    #(a)---------------------------------------------
     sound_flie_name = "mixkit-losing-piano-2024.wav"
     Spectrogram_1_1(sound_flie_name)
+    #------------------------------------------------
     #(b)
-    #(c)
-    #(d)
 
+    #(c)---------------------------------------------
+    WriteChirpToFile_1_c()
+    #------------------------------------------------
+    
+    #(d)---------------------------------------------
+    #------------------------------------------------
     #================================================#
 
 
