@@ -26,10 +26,15 @@ def main():
     plt.show()
     #----------------------------------------------------
     
-    #(b)--------------------------------------------
+    #(b)calculate deriaive of x1 x2 for (D)------------
     t_x1 = np.arange(0,10,hop_len*(1/SR))
     IF_x1 = 2000*t_x1/np.pi
+
+    t_x2 = np.arange(0,10,hop_len*(1/SR))
+    IF_x2 = 2000+50*t_x2*np.cos(2.5*t*t)
+    IF_x2 /= (2*np.pi)
     #------------------------------------------------
+
     #(c)---------------------------------------------
     SR = 8000
     t = np.arange(0,10,1/SR)
@@ -48,15 +53,13 @@ def main():
                             ref=np.max)
     display.specshow(D, y_axis='log', sr=SR, hop_length=hop_len,
                          x_axis='time',fmax=8192)
-    t_x1 = np.arange(0,10,hop_len*(1/SR))
-    IF_x1 = 2000*t_x1/np.pi
     line1 = plt.plot(t_x1,IF_x1)
     plt.subplot(2,1,2)
     D = librosa.amplitude_to_db(np.abs(librosa.stft(x2, hop_length=hop_len,win_length=window_len)),
                             ref=np.max)
     display.specshow(D, y_axis='log', sr=SR, hop_length=hop_len,
                          x_axis='time',fmax=8192)
-    #line1 = plt.plot(D)
+    line2 = plt.plot(t_x2,IF_x2)
     plt.show()
     #------------------------------------------------
 
