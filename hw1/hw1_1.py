@@ -25,15 +25,6 @@ def main():
                          x_axis='time')
     plt.show()
     #----------------------------------------------------
-    
-    #(b)calculate deriaive of x1 x2 for (D)------------
-    t_x1 = np.arange(0,10,hop_len*(1/SR))
-    IF_x1 = 2000*t_x1/np.pi
-
-    t_x2 = np.arange(0,10,hop_len*(1/SR))
-    IF_x2 = 2000+50*t_x2*np.cos(2.5*t*t)
-    IF_x2 /= (2*np.pi)
-    #------------------------------------------------
 
     #(c)---------------------------------------------
     SR = 8000
@@ -47,6 +38,16 @@ def main():
         sf.write("x2.wav",x2,sr)
     #------------------------------------------------
     
+    #(b)calculate deriaive of x1 x2 for (D)------------
+    SR = 8000
+    t_x1 = np.arange(0,10,hop_len*(1/SR))
+    IF_x1 = 2000*t_x1/np.pi
+
+    t_x2 = np.arange(0,10,hop_len*(1/SR))
+    IF_x2 = 2000+50*t_x2*np.cos(2.5*t_x2*t_x2)
+    IF_x2 /= (2*np.pi)
+    #------------------------------------------------
+
     #(d)---------------------------------------------
     plt.subplot(2,1,1)
     D = librosa.amplitude_to_db(np.abs(librosa.stft(x1, hop_length=hop_len,win_length=window_len)),
@@ -60,6 +61,7 @@ def main():
     display.specshow(D, y_axis='log', sr=SR, hop_length=hop_len,
                          x_axis='time',fmax=8192)
     line2 = plt.plot(t_x2,IF_x2)
+
     plt.show()
     #------------------------------------------------
 
