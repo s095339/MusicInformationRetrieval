@@ -7,7 +7,7 @@ import soundfile as sf
 def main():
     
     #(a)---------------------------------------------
-    sound_flie_name = "mixkit-losing-piano-2024.wav"
+    sound_flie_name = "./audio/mixkit-losing-piano-2024.wav"
     print(f"load audiofile {sound_flie_name}...")
     audio, sr = librosa.load(sound_flie_name)
      #load audio file-------------------------------------
@@ -32,10 +32,10 @@ def main():
     x1 = np.sin(2000*t*t)
     x2 = np.sin(2000*t+10*np.sin(2.5*t*t))
     import os
-    if not os.path.exists("x1.wav"):
-        sf.write("x1.wav",x1,sr)
-    if not os.path.exists("x2.wav"):
-        sf.write("x2.wav",x2,sr)
+    if not os.path.exists("./audio/x1.wav"):
+        sf.write("./audio/x1.wav",x1,sr)
+    if not os.path.exists("./audio/x2.wav"):
+        sf.write("./audio/x2.wav",x2,sr)
     #------------------------------------------------
     
     #(b)calculate deriaive of x1 x2 for (D)------------
