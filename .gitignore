@@ -1,2 +1,6 @@
 x1.wav
 x2.wav
+./data/*.wav
+./data
+*.pyc
+*.csv
