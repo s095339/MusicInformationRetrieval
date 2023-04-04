@@ -1,0 +1,68 @@
+import numpy as np
+
+KS_Cmajor = np.array([6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88])
+KS_Cminor = np.array([6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.17])
+KEY_LIST = []
+Key_dict = {
+    "C:maj":0,
+    "C#:maj":1,
+    "Db:maj":1,
+    "D:maj":2,
+    "D#:maj":3,
+    "Eb:maj":3,
+    "E:maj":4,
+    "F:maj":5,
+    "F#:maj":6,
+    "Gd:maj":6,
+    "G:maj":7,
+    "G#:maj":8,
+    "Ab:maj":8,
+    "A:maj":9,
+    "A#:maj":10,
+    "Bb:maj":10,
+    "B:maj":11, 
+
+    "C:min":12,
+    "C#:min":13,
+    "Db:min":13,
+    "D:min":14,
+    "D#:min":15,
+    "Eb:min":15,
+    "E:min":16,
+    "F:min":17,
+    "F#:min":18,
+    "Gd:min":18,
+    "G:min":19,
+    "G#:min":20,
+    "Ab:min":20,
+    "A:min":21,
+    "A#:min":22,
+    "Bb:min":22,
+    "B:min":23
+}
+KEY_LIST = [
+    "C:maj",
+    "C#:maj",
+    "D:maj",
+    "D#:maj",
+    "E:maj",
+    "F:maj",
+    "F#:maj",
+    "G:maj",
+    "G#:maj",
+    "A:maj",
+    "A#:maj",
+    "B:maj", 
+
+    "C:min",
+    "C#:min",
+    "D:min",
+    "D#:min",
+    "E:min",
+    "F:min",
+    "F#:min",
+    "G:min",
+    "G#:min",
+    "A:min",
+    "A#:min",
+    "B:min"]
