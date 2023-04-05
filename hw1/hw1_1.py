@@ -53,13 +53,13 @@ def main():
     D = librosa.amplitude_to_db(np.abs(librosa.stft(x1, hop_length=hop_len,win_length=window_len)),
                             ref=np.max)
     display.specshow(D, y_axis='log', sr=SR, hop_length=hop_len,
-                         x_axis='time',fmax=8192)
+                         x_axis='time')
     line1 = plt.plot(t_x1,IF_x1)
     plt.subplot(2,1,2)
     D = librosa.amplitude_to_db(np.abs(librosa.stft(x2, hop_length=hop_len,win_length=window_len)),
                             ref=np.max)
     display.specshow(D, y_axis='log', sr=SR, hop_length=hop_len,
-                         x_axis='time',fmax=8192)
+                         x_axis='time')
     line2 = plt.plot(t_x2,IF_x2)
 
     plt.show()
