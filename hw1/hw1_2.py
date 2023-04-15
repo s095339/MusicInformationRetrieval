@@ -234,44 +234,205 @@ def Global_Key_detection():
         "WA_cens":WA_cens
     }
     return acc_dict 
-        #print(f"WA:{WA(Key2MirEvalkey(label), Key2MirEvalkey( KEY_LIST[pred_stft]))}")
-         
 
-
-    """
-    #late fusion
-    for frame in range(stft.shape[0]):
-        #print(frame)
-        local_key_dect = np.zeros(shape = (12,))
-        for i in range(K_S_template.shape[1]):   
-            key_scale = K_S_template[i,:]  
-            # I'm not sure ----------------------------------- 
-            statistic = CORR(stft[:,frame],key_scale).statistic
-            #--------------------------------------------------
-            local_key_dect[i] = statistic
-        key_record.append(np.argmax(local_key_dect))
-    import statistics
-    key_pre = statistics.mode(key_record)
-    """
-    #print(stft.shape)
-
+def Local_Key_detection(frame = 60):
+    #i. Generate the K-s template:--------------------------
+    K_S_list = []
+    for i in range(12):
+        K_S_list.append(GenerateKStemplate('major',i))
+    for i in range(12):
+        K_S_list.append(GenerateKStemplate('minor',i))
+    K_S_template = np.array(K_S_list)
+    #print(K_S_template)
+    #display.specshow(K_S_template)
+    #plt.show()
+    print("K_S_template.shape = ",K_S_template.shape)
+    WA = key.evaluate
     #-------------------------------------------------------
+    
+    
+    pth = "./data/01_RawData/audio_wav/SC06"
+    dataset = SWDDataset(data_pth = pth)
+    #get global key annotation
+    dataset.setLocalAnotation(anotation_csv_dir = "./data/02_Annotations/ann_audio_localkey-ann1")
+    dataset.getLocalAnotation(5)
+    
+   
+    #總共的ACC-------------------
+    stft_local_total_RA = 0
+    cqt_local_total_RA = 0
+    cens_local_total_RA = 0
+    stft_local_total_WA = 0
+    cqt_local_total_WA = 0
+    cens_local_total_WA = 0
+    total_piece = 0
+    #--------------------------
+    for idx in range(len(dataset)):#選一首歌
+        
+        audio,sr,name,localKey_anno = dataset.getLocalAnotation(idx)
+        win_size = int(sr/10)
+        hop_size = int(sr/10)
+        #把0.1秒所包含的東西都平均起來：
+        #hop_size = sr/10 win_size = sr/10
+        duration = librosa.get_duration(y=audio,sr=sr)
+        stft,cqt,cens = GetChromaFeature(audio,sr,window_size=win_size,hop_size=hop_size)
+        #得到一個以0.1秒為單位的CHROMAGRAM
+        #把local key的label表示方法做修改以方便做計算:--------
+        #print(localKey_anno)
+        #時間以0.1秒為單位，將label的時間做四捨五入
+        first_key_time = int(round(float(localKey_anno[0][0]),ndigits = 1)*10)
+        last_key_endtime = int(round(float(localKey_anno[-1][1]),ndigits = 1)*10)
+        time_list = []
+        local_key_list = []
+        for key_anno in localKey_anno:
+            time_list.append( int(round(float(key_anno[0]),ndigits = 1)*10))
+            local_key_list.append(Key_dict[key_anno[2]])
+        time_list.append(last_key_endtime) #把結束時間append進去，所以會比keylist多一個element
+        
+        keylabel = {
+            "start":first_key_time,
+            "end":last_key_endtime,
+            "time_list":time_list,
+            "key_list":local_key_list
+        }
+        #print(keylabel)
+        #---------------------------------------------------
+        #Local_Key_detection
+        #產生對每一個0.1秒的調性判斷
+        stft_local_key_list = []
+        cqt_local_key_list = []
+        cens_local_key_list = []
+        for time in range(stft.shape[1]):
+            start = max(0,time-int(frame/2))
+            end = min(stft.shape[1],time+int(frame/2))
+            st = stft[:,start:end].copy()
+            cq =cqt[:,start:end].copy()
+            ce = cens[:,start:end].copy()
+            stft_local_frame_mean = np.mean(st,axis=1)
+            cqt_local_frame_mean = np.mean(cq,axis=1)
+            cens_local_frame_mean = np.mean(ce,axis=1)
+            #print(stft_local_frame_mean.shape)
+            pred_stft = CompareKStemplate(chroma = stft_local_frame_mean,
+                                    K_S_template = K_S_template,
+                                    corr_func = stats.pearsonr
+                                    )
 
-    return
+            #cqt---
+            pred_cqt = CompareKStemplate(chroma = cqt_local_frame_mean,
+                                    K_S_template = K_S_template,
+                                    corr_func = stats.pearsonr
+                                    )    
+        
+            #cens---
+            pred_cens = CompareKStemplate(chroma = cens_local_frame_mean,
+                                    K_S_template = K_S_template,
+                                    corr_func = stats.pearsonr
+                                    )
+            #========================================================================
+            #===================================
+            stft_local_key_list.append(pred_stft)
+            cqt_local_key_list.append(pred_cqt)
+            cens_local_key_list.append(pred_cens)
+        #------
+        #stft_local_key_list 
+        #cqt_local_key_list 
+        #cens_local_key_list 
+        #此時這三個LIST分別記錄了用不同方法預測的lOCAL KEY
+        #------
+        #acc -----------------------------------------------------
+        stft_local_key_correct = 0
+        cqt_local_key_correct  = 0
+        cens_local_key_correct  = 0
+        stft_local_key_WA_score = 0
+        cqt_local_key_WA_score = 0
+        cens_local_key_WA_score = 0
+        stft_local_key_RA = 0
+        cqt_local_key_RA  = 0
+        cens_local_key_RA  = 0
+        stft_local_key_WA = 0
+        cqt_local_key_WA  = 0
+        cens_local_key_WA  = 0
+        current_key_id = 0
+        #只從樂曲開始的地方判斷
+        total = (keylabel["end"]-keylabel["start"]+1)  #只從樂曲開始的地方開始 為了算acc
+        total_piece += total
+        for key_id in range(len(stft_local_key_list)):
+            stft_local_key = stft_local_key_list[key_id]
+            cqt_local_key = cqt_local_key_list[key_id] 
+            cens_local_key = cens_local_key_list[key_id]
+            if key_id < keylabel["start"]:#只從樂曲開始的地方判斷
+                continue
+            elif key_id >= keylabel["end"]:#沒有聲音之後就結束
+                break
+            else: 
+                if key_id>=keylabel["time_list"][current_key_id+1]:
+                    current_key_id+=1
+
+            current_key_label = keylabel["key_list"][current_key_id]
+        
+            if stft_local_key == current_key_label:
+                stft_local_key_correct+=1
+                stft_local_total_RA +=1
+            if cqt_local_key == current_key_label:
+                cqt_local_key_correct+=1
+                cqt_local_total_RA += 1
+            if cens_local_key == current_key_label:
+                cens_local_key_correct+=1
+                cens_local_total_RA += 1
+            #計算WA-------------------------------------------
+            current_key_label_mirEval = Key2MirEvalkey(KEY_LIST[current_key_label])
+            stft_local_key_WA_score += WA(current_key_label_mirEval,Key2MirEvalkey(KEY_LIST[stft_local_key]))["Weighted Score"]
+            cqt_local_key_WA_score  += WA(current_key_label_mirEval,Key2MirEvalkey(KEY_LIST[cqt_local_key]))["Weighted Score"]
+            cens_local_key_WA_score += WA(current_key_label_mirEval,Key2MirEvalkey(KEY_LIST[cens_local_key]))["Weighted Score"]
+            #計算所有24首歌的WA------------------------------------------------
+            
+            stft_local_total_WA += WA(current_key_label_mirEval,Key2MirEvalkey(KEY_LIST[stft_local_key]))["Weighted Score"]
+            cqt_local_total_WA += WA(current_key_label_mirEval,Key2MirEvalkey(KEY_LIST[cqt_local_key]))["Weighted Score"]
+            cens_local_total_WA+= WA(current_key_label_mirEval,Key2MirEvalkey(KEY_LIST[cens_local_key]))["Weighted Score"]
+            #-------------------------------------------------------------------------------------------------------------
+        #計算單首歌RA------------------------------------------
+        stft_local_key_RA = stft_local_key_correct/total
+        cqt_local_key_RA = cqt_local_key_correct/total
+        cens_local_key_RA = cens_local_key_correct/total
+
+        #計算單首歌WA-----------------------------------------
+        stft_local_key_WA = stft_local_key_WA_score/total
+        cqt_local_key_WA = cqt_local_key_WA_score/total
+        cens_local_key_WA = cens_local_key_WA_score/total
+
+        #---------------------------------------------------------
+        print("audio name=",audio)
+        print("stft:")
+        print(f"RA = {stft_local_key_RA } WA = {stft_local_key_WA }")
+        print("cqt:")
+        print(f"RA = {cqt_local_key_RA } WA = {cqt_local_key_WA }")
+        print("cens:")
+        print(f"RA = {cens_local_key_RA } WA = {cens_local_key_WA }")
+
+    #計算整體RA WA
+    stft_local_total_RA = stft_local_total_RA/total_piece
+    cqt_local_total_RA = cqt_local_total_RA/total_piece
+    cens_local_total_RA = cens_local_total_RA/total_piece
+
+    stft_local_total_WA = stft_local_total_WA/total_piece
+    cqt_local_total_WA = cqt_local_total_WA/total_piece
+    cens_local_total_WA = cens_local_total_WA/total_piece
+
+    print("total RA WA-------")
+    print("stft:")
+    print(f"RA = {stft_local_total_RA } WA = {stft_local_total_WA }")
+    print("cqt:")
+    print(f"RA = {cqt_local_total_RA } WA = {cqt_local_total_WA }")
+    print("cens:")
+    print(f"RA = {cens_local_total_RA } WA = {cens_local_total_WA }")
+        
 def main():
     #HW1_2 (a)
-    acc_dict = Global_Key_detection()
-    print(acc_dict)
-
+    #acc_dict = Global_Key_detection()
+    #print(acc_dict)
+    #HW1_2 (b)
+    Local_Key_detection()
     return
-
-
-
-
-
-
-
-
 
 
 

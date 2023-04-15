@@ -12,9 +12,9 @@ class SWDDataset:
     def __len__(self):
         return len(self.datalist)
     def setGlobalAnotation(self, anotation_csv:str,start:int,end:int):
-        self.anotation_csv = anotation_csv
+        self.global_anotation_csv = anotation_csv
         self.global_anotation = []
-        with open(self.anotation_csv, 'r') as file:
+        with open(self.global_anotation_csv, 'r') as file:
             csvreader = csv.reader(file, delimiter=':')
             
             
@@ -33,9 +33,29 @@ class SWDDataset:
         self.datalist = list(self.global_dict.keys())
         print("self.datalist=",self.datalist)
 
-    def setLocalAnotation(self, anotation_csv:str,start:int,end:int):
-        pass
+    def setLocalAnotation(self, anotation_csv_dir:str):
+        self.local_anotation_csv_dir = anotation_csv_dir
+        self.local_anotation_csv = os.listdir(self.local_anotation_csv_dir)
+       
+    def getLocalAnotation(self,idx:int):
+        
+        audio_name = self.local_anotation_csv[idx].split('.')[0]
+        local_anotation_path = os.path.join(self.local_anotation_csv_dir, self.local_anotation_csv[idx])
+        audio_file_name = audio_name+"."+self.data_type
+        #print(audio_file_name)
+        #print(self.local_anotation_csv[idx])
+        audio_path = os.path.join(self.data_pth,audio_file_name)
+        audio,sr = librosa.load(audio_path)
+        localKey = []
+        with open(local_anotation_path,'r') as file:
+            csvreader = csv.reader(file, delimiter=';')
+            for row in csvreader:
+                localKey.append(row)
+        #print(localKey)
+        self.datalist = os.listdir(self.data_pth)
+        return np.array(audio),sr,audio_name,localKey[1:]
 
+        
     def getGlobalAnotation(self,idx:int): 
         """
         parameter
