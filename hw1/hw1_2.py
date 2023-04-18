@@ -322,7 +322,8 @@ def Local_Key_detection(frame = 60):
                                     corr_func = stats.pearsonr
                                     )
 
-            #cqt---
+            #cqt--- 
+            
             pred_cqt = CompareKStemplate(chroma = cqt_local_frame_mean,
                                     K_S_template = K_S_template,
                                     corr_func = stats.pearsonr
