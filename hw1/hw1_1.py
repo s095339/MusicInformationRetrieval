@@ -33,9 +33,9 @@ def main():
     x2 = np.sin(2000*t+10*np.sin(2.5*t*t))
     import os
     if not os.path.exists("./audio/x1.wav"):
-        sf.write("./audio/x1.wav",x1,sr)
+        sf.write("./audio/x1.wav",x1,SR)
     if not os.path.exists("./audio/x2.wav"):
-        sf.write("./audio/x2.wav",x2,sr)
+        sf.write("./audio/x2.wav",x2,SR)
     #------------------------------------------------
     
     #(b)calculate deriaive of x1 x2 for (D)------------

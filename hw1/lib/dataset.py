@@ -2,6 +2,7 @@ import os
 import csv
 import librosa
 import numpy as np
+from .define import KS_Cmajor,KS_Cminor,Key_dict,KEY_LIST
 class SWDDataset:
     """
     Build a SWDDataset for global key detection and local key detection
@@ -36,9 +37,11 @@ class SWDDataset:
     def setLocalAnotation(self, anotation_csv_dir:str):
         self.local_anotation_csv_dir = anotation_csv_dir
         self.local_anotation_csv = os.listdir(self.local_anotation_csv_dir)
-       
+        self.datalist = os.listdir(self.data_pth)
     def getLocalAnotation(self,idx:int):
-        
+        """
+        產生2(B)需要的label
+        """
         audio_name = self.local_anotation_csv[idx].split('.')[0]
         local_anotation_path = os.path.join(self.local_anotation_csv_dir, self.local_anotation_csv[idx])
         audio_file_name = audio_name+"."+self.data_type
@@ -52,22 +55,12 @@ class SWDDataset:
             for row in csvreader:
                 localKey.append(row)
         #print(localKey)
-        self.datalist = os.listdir(self.data_pth)
+        #self.datalist = os.listdir(self.data_pth)
         return np.array(audio),sr,audio_name,localKey[1:]
-
         
     def getGlobalAnotation(self,idx:int): 
         """
-        parameter
-        -----------------
-        id: the index of song
-
-        return
-        -----------------
-        audio:np.ndarray readed by librosa.load(audio_)
-        sr: sampling rate
-        audio_:audio name
-        label:global annotation 
+        產生2(A)需要的label
         """
         audio_ = self.datalist[idx]
         label = self.global_dict[audio_]
@@ -75,6 +68,36 @@ class SWDDataset:
         audio_path = os.path.join(self.data_pth,audio_filename)
         audio,sr = librosa.load(audio_path)
         return np.array(audio),sr,audio_,label
+
+    def getSegmentAnotation(self,idx:int):
+        """
+        產生2(C)需要的label
+        """
+        audio_name = self.local_anotation_csv[idx].split('.')[0]
+        local_anotation_path = os.path.join(self.local_anotation_csv_dir, self.local_anotation_csv[idx])
+        audio_file_name = audio_name+"."+self.data_type
+        #print(audio_file_name)
+        #print(self.local_anotation_csv[idx])
+        audio_path = os.path.join(self.data_pth,audio_file_name)
+        audio,sr = librosa.load(audio_path)
+        localKey = []
+        with open(local_anotation_path,'r') as file:
+            csvreader = csv.reader(file, delimiter=';')
+            for row in csvreader:
+                localKey.append(row)
+        #print(localKey)
+        interval = np.zeros(shape=(len(localKey[1:]),2),dtype = float)
+        key_label = []
+        for i in range(len(localKey[1:])):
+            interval[i,0] = round(float(localKey[i+1][0]), ndigits = 1)#start
+            interval[i,1] = round(float(localKey[i+1][1]), ndigits = 1)#stop
+            key_label.append(localKey[i+1][2])
+        self.datalist = os.listdir(self.data_pth)
+        #print(interval)
+        #print(key_label)
+
+        return np.array(audio),sr,audio_name,key_label,interval
+    
 
 if __name__ == '__main__':
 

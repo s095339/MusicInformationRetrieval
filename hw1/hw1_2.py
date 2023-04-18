@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import soundfile as sf
 
+import mir_eval
 import mir_eval.key as key    #evaluate the WA_global
 import scipy.stats as stats # find the correlation coefficients
 
@@ -14,6 +15,9 @@ from lib.dataset import SWDDataset
 from lib.define import KS_Cmajor,KS_Cminor,Key_dict,KEY_LIST
 
 #KS scale template ----------
+def cossimarity(a,b):
+    return np.dot(a,b)/(np.linalg.norm(a)*np.linalg.norm(b))
+
 def Key2MirEvalkey(key:str):
     """
     transform the key representation of label to the mir_eval.key representation
@@ -95,7 +99,10 @@ def CompareKStemplate(chroma,K_S_template,corr_func):
     for i in range(K_S_template.shape[1]):   
         key_scale = K_S_template[i,:]  
         # I'm not sure ----------------------------------- 
-        statistic = corr_func(chroma,key_scale).statistic
+        try:
+            statistic = corr_func(chroma,key_scale).statistic
+        except:
+            statistic = corr_func(chroma,key_scale)
         if max_corr < statistic:
             max_corr = statistic
             max_id = i
@@ -103,6 +110,7 @@ def CompareKStemplate(chroma,K_S_template,corr_func):
     return max_id
 def Global_Key_detection():
     #prepare dataset:---------------------------------------
+    #準備資料集
     pth = "./data/01_RawData/audio_wav/SC06"
     dataset = SWDDataset(data_pth = pth)
     #get global key annotation
@@ -110,6 +118,7 @@ def Global_Key_detection():
                                start = 25,
                                end = 50
                                )
+    #WA要用的函數
     WA = key.evaluate
     #------------------------------------------------------
     
@@ -147,7 +156,7 @@ def Global_Key_detection():
     WA_cqt = 0.0
     WA_cens = 0.0
 
-    progress = tqdm(total=len(dataset))
+    #progress = tqdm(total=len(dataset))
 
     # predict the global key for all audio 
     for idx in range(len(dataset)):
@@ -178,16 +187,11 @@ def Global_Key_detection():
                                 K_S_template = K_S_template,
                                 corr_func = stats.pearsonr
                                 )
-        #print(f"pred = {pred_stft},ans = {ans}\nkey_pred = {KEY_LIST[pred_stft]},key_ans = {label}")
-        
-        
         #cqt---
         pred_cqt = CompareKStemplate(chroma = cqt_mean,
                                 K_S_template = K_S_template,
                                 corr_func = stats.pearsonr
                                 )    
-        #print(f"pred = {pred_cqt},ans = {ans}\nkey_pred = {KEY_LIST[pred_cqt]},key_ans = {label}")
-        
         #cens---
         pred_cens = CompareKStemplate(chroma = cens_mean,
                                 K_S_template = K_S_template,
@@ -214,7 +218,7 @@ def Global_Key_detection():
         WA_cqt += WA(ref_key,Key2MirEvalkey(KEY_LIST[pred_cqt]))["Weighted Score"]
         WA_cens += WA(ref_key,Key2MirEvalkey(KEY_LIST[pred_cens]))["Weighted Score"]
         #========================================================================
-        progress.update(1)
+        #progress.update(1)
     #calculate RAW accuracy-------------
     RA_stft /= len(dataset)
     RA_cqt /= len(dataset) 
@@ -295,6 +299,7 @@ def Local_Key_detection(frame = 60):
             "time_list":time_list,
             "key_list":local_key_list
         }
+
         #print(keylabel)
         #---------------------------------------------------
         #Local_Key_detection
@@ -333,7 +338,8 @@ def Local_Key_detection(frame = 60):
             stft_local_key_list.append(pred_stft)
             cqt_local_key_list.append(pred_cqt)
             cens_local_key_list.append(pred_cens)
-        #------
+
+        #----------------------------------------------------
         #stft_local_key_list 
         #cqt_local_key_list 
         #cens_local_key_list 
@@ -401,7 +407,7 @@ def Local_Key_detection(frame = 60):
         cens_local_key_WA = cens_local_key_WA_score/total
 
         #---------------------------------------------------------
-        print("audio name=",audio)
+        print("audio name=",name)
         print("stft:")
         print(f"RA = {stft_local_key_RA } WA = {stft_local_key_WA }")
         print("cqt:")
@@ -425,15 +431,147 @@ def Local_Key_detection(frame = 60):
     print(f"RA = {cqt_local_total_RA } WA = {cqt_local_total_WA }")
     print("cens:")
     print(f"RA = {cens_local_total_RA } WA = {cens_local_total_WA }")
+    
+    return {
+        "stft_RA":stft_local_total_RA,
+        "cqt_RA":cqt_local_total_RA, 
+        "cens_RA":cens_local_total_RA,
+        "stft_WA":stft_local_total_WA,
+        "cqt_WA":cqt_local_total_WA,
+        "cens_WA":cens_local_total_WA
+    }
+
+def Segmentation(frame = 200):
+    #i. Generate the K-s template:--------------------------
+    K_S_list = []
+    for i in range(12):
+        K_S_list.append(GenerateKStemplate('major',i))
+    for i in range(12):
+        K_S_list.append(GenerateKStemplate('minor',i))
+    K_S_template = np.array(K_S_list)
+    #print(K_S_template)
+    #display.specshow(K_S_template)
+    #plt.show()
+    print("K_S_template.shape = ",K_S_template.shape)
+
+    #-------------------------------------------------------
+    
+    
+    pth = "./data/01_RawData/audio_wav/SC06"
+    dataset = SWDDataset(data_pth = pth)
+    #get global key annotation
+    dataset.setLocalAnotation(anotation_csv_dir = "./data/02_Annotations/ann_audio_localkey-ann1")
+    #dataset.getSegmentAnotation(0)
+    #return
+   
+    for idx in range(len(dataset)):#選一首歌
+        audio,sr,name,key_label,interval = dataset.getSegmentAnotation(idx)
+        win_size = int(sr/10)
+        hop_size = int(sr/10)
+        #把0.1秒所包含的東西都平均起來：
+        #hop_size = sr/10 win_size = sr/10
+        duration = librosa.get_duration(y=audio,sr=sr)
+        stft,cqt,cens = GetChromaFeature(audio,sr,window_size=win_size,hop_size=hop_size)
+        #得到一個以0.1秒為單位的CHROMAGRAM
+        #把local key的label表示方法做修改以方便做計算:--------
+        #print(localKey_anno)
+        #時間以0.1秒為單位，將label的時間做四捨五入
         
+    
+        
+        keylabel = {
+            "start":interval[0,0],
+            "end":interval[-1,1],
+            "ref_intervals":interval,
+            "ref_labels":key_label
+        }
+
+        #print(keylabel)
+        #---------------------------------------------------
+        #Local_Key_detection
+        #產生對每一個0.1秒的調性判斷
+        stft_local_key_list = []
+        cqt_local_key_list = []
+        cens_local_key_list = []
+        for time in range(stft.shape[1]):
+            start = max(0,time-int(frame/2))
+            end = min(stft.shape[1],time+int(frame/2))
+            st = stft[:,start:end].copy()
+           
+            stft_local_frame_mean = np.mean(st,axis=1)
+           
+            pred_stft = CompareKStemplate(chroma = stft_local_frame_mean,
+                                    K_S_template = K_S_template,
+                                    corr_func = stats.pearsonr
+                                    )
+            #========================================================================
+            #===================================
+            stft_local_key_list.append(pred_stft)
+        start = int(keylabel["start"]*10)
+        stop = int(keylabel["end"]*10)
+        
+        est_interval_temp = []
+        est_key_list = []
+        current_key = 0
+        for i in range(len(stft_local_key_list[start:stop+1])):
+            t  = i + start
+            if t == start:
+                est_interval_temp.append(start/10)
+                last_key = stft_local_key_list[t]
+                continue
+            if t == stop:
+                est_interval_temp.append((stop)/10)
+                est_key_list.append(KEY_LIST[last_key])
+                break
+            
+            if stft_local_key_list[t]!=last_key:
+                est_interval_temp.append(t/10)
+                est_key_list.append(KEY_LIST[last_key])
+                last_key = stft_local_key_list[t]
+        
+        est_interval = np.zeros(shape = (len(est_interval_temp)-1,2))
+    
+        last = 0
+        for i in range(len(est_interval_temp)):
+            if i == 0:
+                last = est_interval_temp[i]
+                continue
+            #print("last = ",last)
+            est_interval[i-1,0] = last
+            est_interval[i-1,1] = est_interval_temp[i]
+            last = est_interval_temp[i]
+        
+        #print(est_interval_temp)
+        print(est_interval)
+        print(est_key_list)
+        
+        print(keylabel["ref_intervals"])
+        print(keylabel["ref_labels"])
+
+        results = mir_eval.chord.evaluate(keylabel["ref_intervals"], keylabel["ref_labels"], est_interval, est_key_list)
+        print("audioname = ", name)
+        underseg_score = results['underseg']
+        overseg_score = results['overseg']
+        avg_score = (underseg_score+overseg_score)/2
+
+        print("Over-segmentation: {:.3f}".format(underseg_score))
+        print("Under-segmentation: {:.3f}".format(overseg_score))
+        print("Average segmentation: {:.3f}".format(avg_score ))
+        
+        
+
+
+
 def main():
     #HW1_2 (a)
-    #acc_dict = Global_Key_detection()
-    #print(acc_dict)
+    acc_dict = Global_Key_detection()
+    print(acc_dict)
     #HW1_2 (b)
-    Local_Key_detection()
-    return
+    Local_Key_detection(200)
+    #HW1_2 (c)
+    Segmentation(200)
 
+    
 
 
 if __name__ == '__main__':
