@@ -7,7 +7,7 @@ import soundfile as sf
 def main():
     
     #(a)---------------------------------------------
-    sound_flie_name = "mixkit-losing-piano-2024.wav"
+    sound_flie_name = "./audio/mixkit-losing-piano-2024.wav"
     print(f"load audiofile {sound_flie_name}...")
     audio, sr = librosa.load(sound_flie_name)
      #load audio file-------------------------------------
@@ -32,10 +32,10 @@ def main():
     x1 = np.sin(2000*t*t)
     x2 = np.sin(2000*t+10*np.sin(2.5*t*t))
     import os
-    if not os.path.exists("x1.wav"):
-        sf.write("x1.wav",x1,sr)
-    if not os.path.exists("x2.wav"):
-        sf.write("x2.wav",x2,sr)
+    if not os.path.exists("./audio/x1.wav"):
+        sf.write("./audio/x1.wav",x1,SR)
+    if not os.path.exists("./audio/x2.wav"):
+        sf.write("./audio/x2.wav",x2,SR)
     #------------------------------------------------
     
     #(b)calculate deriaive of x1 x2 for (D)------------
@@ -53,13 +53,13 @@ def main():
     D = librosa.amplitude_to_db(np.abs(librosa.stft(x1, hop_length=hop_len,win_length=window_len)),
                             ref=np.max)
     display.specshow(D, y_axis='log', sr=SR, hop_length=hop_len,
-                         x_axis='time',fmax=8192)
+                         x_axis='time')
     line1 = plt.plot(t_x1,IF_x1)
     plt.subplot(2,1,2)
     D = librosa.amplitude_to_db(np.abs(librosa.stft(x2, hop_length=hop_len,win_length=window_len)),
                             ref=np.max)
     display.specshow(D, y_axis='log', sr=SR, hop_length=hop_len,
-                         x_axis='time',fmax=8192)
+                         x_axis='time')
     line2 = plt.plot(t_x2,IF_x2)
 
     plt.show()

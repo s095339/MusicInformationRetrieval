@@ -1,7 +1,10 @@
 # MusicInformationRetrieval
+This repository stores the homework projects I worked for  MusicInformationRetrieval course
 
 [TOC]
 
-This repository stores the homework project I worked for  MusicInformationRetrieval course
+
+
 ### HW1
 
+### HW2
