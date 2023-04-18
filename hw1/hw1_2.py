@@ -543,17 +543,17 @@ def Segmentation(frame = 200):
             last = est_interval_temp[i]
         
         #print(est_interval_temp)
-        print(est_interval)
-        print(est_key_list)
+        #print(est_interval)
+        #print(est_key_list)
         
-        print(keylabel["ref_intervals"])
-        print(keylabel["ref_labels"])
+        #print(keylabel["ref_intervals"])
+        #print(keylabel["ref_labels"])
 
         results = mir_eval.chord.evaluate(keylabel["ref_intervals"], keylabel["ref_labels"], est_interval, est_key_list)
         print("audioname = ", name)
         underseg_score = results['underseg']
         overseg_score = results['overseg']
-        avg_score = (underseg_score+overseg_score)/2
+        avg_score =results['seg']
 
         print("Over-segmentation: {:.3f}".format(underseg_score))
         print("Under-segmentation: {:.3f}".format(overseg_score))
