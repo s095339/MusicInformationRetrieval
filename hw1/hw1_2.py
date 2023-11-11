@@ -565,11 +565,14 @@ def Segmentation(frame = 200):
 
 def main():
     #HW1_2 (a)
+    print("-----------------2(a)----------------------------")
     acc_dict = Global_Key_detection()
     print(acc_dict)
     #HW1_2 (b)
+    print("-----------------2(b)----------------------------")
     Local_Key_detection(200)
     #HW1_2 (c)
+    print("-----------------2(c)----------------------------")
     Segmentation(200)
 
     
